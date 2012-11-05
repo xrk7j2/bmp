@@ -12,18 +12,13 @@
 (define (inc n) (fx+ n 1))
 (define (dec n) (fx- n 1))
 
+(define (output-function port)
+  (lambda args
+    (for-each (lambda (arg) ((if (pair? arg) write display) arg port))
+              args)))
 
-(define (cout . args)
-  (for-each (lambda (arg) ((if (pair? arg) write display) arg))
-            args))
-(define cerr
-  (let ((stderr (current-error-port)))
-    (lambda args
-      (for-each (lambda (arg) ((if (pair? arg)
-                              (lambda (x) (write x stderr))
-                              (lambda (x) (display x stderr)))
-                          arg))
-                args))))
+(define cout (output-function (current-output-port)))
+(define cerr (output-function (current-error-port)))                       
 (define nl #\newline)
 
 
@@ -74,6 +69,9 @@
   `(vector-for-each (lambda (,nam) ,@exps)
                     ,exp))
 
+(define-macro (when exp . body)
+  `(cond (,exp ,@body)))
+
 (define (padding len)
   (let ((r (remainder len 4)))
     (if (zero? r) 0 (- 4 r))))
@@ -89,10 +87,11 @@
             (loop (inc i)
                   (+ bytes 3)))))))
 
-(define (display-lines lines port)
+(define (display-lines lines port verbose?)
   (let ((len (vector-length lines)))
     (for i 0 (dec len)
-      (cerr "writing " (inc i) "/" len nl)
+      (when verbose?
+        (cerr "writing " (inc i) "/" len nl))
       (let ((line (vector-ref lines i)))
         (display-line line port)))))
 
@@ -117,7 +116,7 @@
 (define (image-height img)
   (vector-length img))
 
-(define (write-bmp port lines)
+(define (write-bmp port lines verbose?)
   (let ((width (image-width lines))
         (heigth (image-height lines))
         (size (calculate-size lines))
@@ -134,7 +133,7 @@
     (pr (int32 0))       ; biCompression
     (pr (int32 size))  ; biSizeImage
     (pr (empty 16))       ; biXPelsPerMeter biYPelsPerMeter biClrUsed biClrImportant
-    (display-lines lines port)
+    (display-lines lines port verbose?)
     ))
 
 
@@ -156,14 +155,15 @@
   (map vector->list (vector->list img)))
 
 
-(define (mandelbrot width height x-min x-max y-min y-max)
+(define (mandelbrot width height x-min x-max y-min y-max verbose?)
   (let ((image (make-image width height))
         (delta-x (- x-max x-min))
         (delta-y (- y-max y-min)))
     (let ((pixel-width (/ delta-x width 1.0))
           (pixel-height (/ delta-y height 1.0)))
       (for h 0 (dec height)
-        (cerr (inc h) "/" height nl)
+        (when verbose?
+          (cerr (inc h) "/" height nl))
         (for w 0 (dec width)
           (check-pixel! image w h x-min y-min pixel-width pixel-height))))
     image))

@@ -25,15 +25,18 @@
 
 (define (convert-xaos ls)
   (destruct (ax ay delta-x delta-y) ls
-    (list (- ax (/ delta-x 2))
-          (- ay (/ delta-y 2))
-          (+ ax (/ delta-x 2))
-          (+ ay (/ delta-y 2)))))
+    (let ((result (list (- ax (/ delta-x 2))
+                        (+ ax (/ delta-x 2))
+                        (- ay (/ delta-y 2))
+                        (+ ay (/ delta-y 2)))))
+      (cerr result nl)
+      result)))
 
 (let ((cmdline (command-line)))
   (call/cc
    (lambda (return)
-     (let ((xaos? #f))
+     (let ((xaos? #f)
+           (verbose? #f))
        (cond
         ((null? (cdr cmdline))
          (usage (car cmdline))
@@ -53,7 +56,10 @@
              (else
               (write-bmp (current-output-port)
                          (apply mandelbrot
-                                (if xaos?
-                                    (append ints (convert-xaos reals))
-                                    args)))))
+                                (append (if xaos?
+                                            (append ints
+                                                    (convert-xaos reals))
+                                            args)
+                                        (list verbose?)))
+                         verbose?)))
            (return 0)))))))

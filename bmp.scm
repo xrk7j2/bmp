@@ -1,3 +1,5 @@
+(include "syntax.scm")
+
 (declare
   (standard-bindings)
   (extended-bindings)
@@ -43,34 +45,20 @@
   (bytes (extract-bit-field 8 0 n)
          (extract-bit-field 8 8 n)))
 
-(define red car)
-(define green cadr)
-(define blue caddr)
+(define pixel-red car)
+(define pixel-green cadr)
+(define pixel-blue caddr)
 
 (define (display-pixel pix pt)
-  (display (string (integer->char (blue pix))
-                   (integer->char (green pix))
-                   (integer->char (red pix)))
+  (display (string (integer->char (pixel-blue pix))
+                   (integer->char (pixel-green pix))
+                   (integer->char (pixel-red pix)))
            pt))
-
-(define-macro (for counter start stop . exps)
-  (let ((loop (gensym)))
-    `(let ,loop ((,counter ,start))
-       ,@exps
-       (if (< ,counter ,stop)
-           (,loop (fx+ ,counter 1))))))
 
 (define (vector-for-each proc vec)
   (let ((len (vector-length vec)))
     (for i 0 (dec len)
       (proc (vector-ref vec i)))))
-
-(define-macro (each nam exp . exps)
-  `(vector-for-each (lambda (,nam) ,@exps)
-                    ,exp))
-
-(define-macro (when exp . body)
-  `(cond (,exp ,@body)))
 
 (define (padding len)
   (let ((r (remainder len 4)))
@@ -131,8 +119,8 @@
     (pr (int16 1))       ; biPlanes
     (pr (int16 24))      ; biBitCount
     (pr (int32 0))       ; biCompression
-    (pr (int32 size))  ; biSizeImage
-    (pr (empty 16))       ; biXPelsPerMeter biYPelsPerMeter biClrUsed biClrImportant
+    (pr (int32 size))    ; biSizeImage
+    (pr (empty 16))      ; biXPelsPerMeter biYPelsPerMeter biClrUsed biClrImportant
     (display-lines lines port verbose?)
     ))
 
@@ -153,50 +141,3 @@
 
 (define (image->list img)
   (map vector->list (vector->list img)))
-
-
-(define (mandelbrot width height x-min x-max y-min y-max verbose?)
-  (let ((image (make-image width height))
-        (delta-x (- x-max x-min))
-        (delta-y (- y-max y-min)))
-    (let ((pixel-width (/ delta-x width 1.0))
-          (pixel-height (/ delta-y height 1.0)))
-      (for h 0 (dec height)
-        (when verbose?
-          (cerr (inc h) "/" height nl))
-        (for w 0 (dec width)
-          (check-pixel! image w h x-min y-min pixel-width pixel-height))))
-    image))
-
-(define (fl-square x) (fl* x x))              
-
-(define (offset dim min pixel-dim)
-  (fl+ min (fl* (fl+ (exact->inexact dim) 0.5) pixel-dim)))
-
-(define make-gray-pixel
-  (let ((tab (make-table)))
-    (lambda (intensity)
-      (or (table-ref tab intensity #f)
-          (let ((pix (list intensity
-                           (* intensity 3)
-                           (* intensity 4))))
-            (table-set! tab intensity pix)
-            pix)))))
-
-(define (check-pixel! image w h x-min y-min pixel-width pixel-height)
-  (let ((cx (offset w x-min pixel-width))
-        (cy (offset h y-min pixel-height)))
-    (let loop ((zx 0.)
-               (zy 0.)
-               (counter 0))
-      (if (fx> counter 63)
-          (set-pixel! image w h black)
-          (let ((zx (fl+ (fl- (fl-square zx) (fl-square zy)) cx))
-                (zy (fl+ (fl* 2. zx zy) cy)))
-            (if (fl> (fl+ (fl-square zx) (fl-square zy)) 4.)
-                (set-pixel! image w h
-                            (make-gray-pixel counter))
-                (loop zx zy (inc counter))))))))
-
-(define (whole w h)
-  (mandelbrot w h -1.8 .7 -1.2 1.2))

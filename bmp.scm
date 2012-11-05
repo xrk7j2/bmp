@@ -1,18 +1,9 @@
 (include "syntax.scm")
 
-(declare
-  (standard-bindings)
-  (extended-bindings)
-  (block)
-  (not safe)
-  (mostly-flonum-fixnum)
-  (inline)
-  (inline-primitives)
-  (inlining-limit 300)
-  )
-
 (define (inc n) (fx+ n 1))
 (define (dec n) (fx- n 1))
+
+(define (pixel r g b) (list r g b))
 
 (define (output-function port)
   (lambda args
@@ -56,9 +47,8 @@
            pt))
 
 (define (vector-for-each proc vec)
-  (let ((len (vector-length vec)))
-    (for i 0 (dec len)
-      (proc (vector-ref vec i)))))
+  (upto i (vector-length vec)
+    (proc (vector-ref vec i))))
 
 (define (padding len)
   (let ((r (remainder len 4)))
@@ -77,7 +67,7 @@
 
 (define (display-lines lines port verbose?)
   (let ((len (vector-length lines)))
-    (for i 0 (dec len)
+    (upto i len
       (when verbose?
         (cerr "writing " (inc i) "/" len nl))
       (let ((line (vector-ref lines i)))
@@ -86,7 +76,7 @@
 (define (vector-reverse v)
   (let ((len (vector-length v)))
     (let ((new-v (make-vector len)))
-      (for i 0 (dec len)
+      (upto i len
         (vector-set! new-v i (vector-ref v (fx- len 1 i))))
       new-v)))
 
@@ -104,7 +94,7 @@
 (define (image-height img)
   (vector-length img))
 
-(define (write-bmp port lines verbose?)
+(define (write-bmp port lines #!optional (verbose? #f))
   (let ((width (image-width lines))
         (heigth (image-height lines))
         (size (calculate-size lines))
@@ -121,18 +111,15 @@
     (pr (int32 0))       ; biCompression
     (pr (int32 size))    ; biSizeImage
     (pr (empty 16))      ; biXPelsPerMeter biYPelsPerMeter biClrUsed biClrImportant
-    (display-lines lines port verbose?)
+    (display-lines (reverse-lines lines) port verbose?)
     ))
-
-
 
 (define white (list 255 255 255))
 (define black (list 0 0 0))
 
-
 (define (make-image width height)
   (let ((image (make-vector height)))
-    (for i 0 (dec height)
+    (upto i height
       (vector-set! image i (make-vector width white)))
     image))
 

@@ -13,12 +13,12 @@
 
 (define (usage self)
   (cout "Copyright Florian Spitzer 2012" nl)
-  (cout "USAGE:" nl)
+  (cout "Usage:" nl)
   (cout self " <path> <width> <height> <x-min> <x-max> <y-min> <y-max>" nl)
   (cout "    width, height:               must be integer" nl)
-  (cout "    x-min, x-max, y-min, y-max:  must be real" nl)
+  (cout "    x-min, x-max, y-min, y-max:  must be real" nl nl)
   (cout "To create a BMP file, say:" nl)
-  (cout "    " self " 500 500 -1.8 .7 -1.2 1.2 > mandelbrot.bmp" nl)
+  (cout "    " self " 500 500 -1.8 .7 -1.2 1.2 > mandelbrot.bmp" nl nl)
   (cout "To create a PNG file, say:" nl)
   (cout "    " self " 500 500 -1.8 .7 -1.2 1.2 | bmptopnm | pnmtopng > mandelbrot.png" nl)
   )
@@ -36,7 +36,7 @@
   (call/cc
    (lambda (return)
      (let ((xaos? #f)
-           (verbose? #f))
+           (verbose? #t))
        (cond
         ((null? (cdr cmdline))
          (usage (car cmdline))

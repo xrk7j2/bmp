@@ -1,9 +1,14 @@
+(include "decl.scm")
 (include "syntax.scm")
 
 (define (inc n) (fx+ n 1))
 (define (dec n) (fx- n 1))
 
-(define (pixel r g b) (list r g b))
+(define (pixel r g b)
+  (vector r g b))
+(define (pixel-red p) (vector-ref p 0))
+(define (pixel-green p) (vector-ref p 1))
+(define (pixel-blue p) (vector-ref p 2))
 
 (define (output-function port)
   (lambda args
@@ -13,15 +18,13 @@
 (define cout (output-function (current-output-port)))
 (define cerr (output-function (current-error-port)))                       
 (define nl #\newline)
+(define return #\return)
 
+(define nul-char (integer->char 0))
 
 (define (empty n)
-  (make-string n #\nul))
+  (make-string n nul-char))
 
-(define (write-bmp-file path ls)
-  (call-with-output-file path
-    (lambda (port)
-      (write-bmp port ls))))
 
 (define (bytes . args)
   (apply string (map integer->char args)))
@@ -36,15 +39,13 @@
   (bytes (extract-bit-field 8 0 n)
          (extract-bit-field 8 8 n)))
 
-(define pixel-red car)
-(define pixel-green cadr)
-(define pixel-blue caddr)
 
 (define (display-pixel pix pt)
-  (display (string (integer->char (pixel-blue pix))
-                   (integer->char (pixel-green pix))
-                   (integer->char (pixel-red pix)))
-           pt))
+  (define (putchar n)
+    (write-char (integer->char n) pt))
+  (putchar (pixel-blue pix))
+  (putchar (pixel-green pix))
+  (putchar (pixel-red pix)))
 
 (define (vector-for-each proc vec)
   (upto i (vector-length vec)
@@ -59,7 +60,7 @@
     (let loop ((i 0)
                (bytes 0))
       (if (fx>= i len)
-          (display (empty (padding bytes)) pt)
+          (display-bytes (empty (padding bytes)) pt)
           (begin
             (display-pixel (vector-ref line i) pt)
             (loop (inc i)
@@ -69,7 +70,7 @@
   (let ((len (vector-length lines)))
     (upto i len
       (when verbose?
-        (cerr "writing " (inc i) "/" len nl))
+        (cerr "writing " (inc i) "/" len return))
       (let ((line (vector-ref lines i)))
         (display-line line port)))))
 
@@ -77,7 +78,7 @@
   (let ((len (vector-length v)))
     (let ((new-v (make-vector len)))
       (upto i len
-        (vector-set! new-v i (vector-ref v (fx- len 1 i))))
+        (vector-set! new-v i (vector-ref v (fx+ len -1 (fx- i)))))
       new-v)))
 
 (define (calculate-size lines)
@@ -94,11 +95,15 @@
 (define (image-height img)
   (vector-length img))
 
-(define (write-bmp port lines #!optional (verbose? #f))
+(define (display-bytes str port)
+  (upto i (string-length str)
+    (write-char (string-ref str i) port)))
+
+(define (write-bmp-verbose port lines verbose?)
   (let ((width (image-width lines))
         (heigth (image-height lines))
         (size (calculate-size lines))
-        (pr (lambda (x) (display x port))))
+        (pr (lambda (x) (display-bytes x port))))
     (pr "BM")            ; bfType
     (pr (int32 (fx+ size 54)))  ; bfSize
     (pr (int32 0))       ; bfReserved
@@ -114,8 +119,18 @@
     (display-lines (reverse-lines lines) port verbose?)
     ))
 
-(define white (list 255 255 255))
-(define black (list 0 0 0))
+(define (write-bmp port lines)
+  (write-bmp-verbose port lines #f))
+
+(define (write-bmp-file path ls)
+  (call-with-output-file path
+    (lambda (port)
+      (write-bmp port ls))))
+
+
+
+(define white (pixel 255 255 255))
+(define black (pixel 0 0 0))
 
 (define (make-image width height)
   (let ((image (make-vector height)))

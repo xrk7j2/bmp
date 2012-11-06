@@ -54,12 +54,16 @@
                   (memv #f (map real? (list-tail args 2))))
               (usage (car cmdline)))
              (else
-              (write-bmp (current-output-port)
-                         (apply mandelbrot
-                                (append (if xaos?
-                                            (append ints
-                                                    (convert-xaos reals))
-                                            args)
-                                        (list verbose?)))
-                         verbose?)))
+              (let ((calculate-image
+                     (lambda ()
+                       (apply mandelbrot
+                              (append (if xaos?
+                                          (append ints
+                                                  (convert-xaos reals))
+                                          args)
+                                      (list verbose?))))))
+                (let ((data (time (calculate-image))))
+                  (time (write-bmp (current-output-port)
+                                   data                     
+                                   verbose?))))))
            (return 0)))))))

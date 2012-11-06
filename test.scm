@@ -13,3 +13,9 @@
       (upto y h
         (set-pixel! image x y (grey-pixel (f x)))))
     image))
+
+(define (test)
+  (load "bmp.scm")
+  (let ((image (make-image 10 10)))
+    (set-pixel! image 2 2 (pixel 255 0 0))
+    (write-bmp-file "a.bmp" image)))

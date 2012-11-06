@@ -1,15 +1,3 @@
-(declare
-  (standard-bindings)
-  (extended-bindings)
-  (block)
-  (not safe)
-  (mostly-flonum-fixnum)
-  (inline)
-  (inline-primitives)
-  (inlining-limit 300)
-  )
-
-
 (define-macro (for counter start stop . exps)
   (let ((loop (gensym)))
     `(let ,loop ((,counter ,start))

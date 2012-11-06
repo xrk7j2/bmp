@@ -14,7 +14,7 @@
           (pixel-height (/ delta-y height 1.0)))
       (for h 0 (dec height)
         (when verbose?
-          (cerr (inc h) "/" height nl))
+          (cerr (inc h) "/" height return))
         (for w 0 (dec width)
           (check-pixel! image w h x-min y-min pixel-width pixel-height))))
     image))
@@ -25,9 +25,9 @@
   (let ((tab (make-table)))
     (lambda (intensity)
       (or (table-ref tab intensity #f)
-          (let ((pix (list intensity
-                           (* intensity 3)
-                           (* intensity 4))))
+          (let ((pix (pixel intensity
+                            (* intensity 3)
+                            (* intensity 4))))
             (table-set! tab intensity pix)
             pix)))))
 
